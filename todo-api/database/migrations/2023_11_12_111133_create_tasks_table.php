@@ -21,6 +21,8 @@ class CreateTasksTable extends Migration
             $table->json('sub_tasks')->nullable();
             $table->boolean('deleted')->default(false);
             $table->foreignId('parent_task_id')->nullable()->constrained('tasks', 'id')->onDelete('cascade');
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();
         });
     }

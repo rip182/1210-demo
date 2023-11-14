@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
@@ -30,10 +32,26 @@ class TaskController extends Controller
         }
 
         // Retrieve tasks based on sorting parameters
-        $tasks = Task::orderBy($orderBy, $orderDirection)->get();
+
+         $tasks = Task::where('user_id', Auth::id())
+        ->orderBy($orderBy, $orderDirection)
+        ->get();
+
+
 
         return response()->json(['tasks' => $tasks]);
+
     }
+
+
+    public function archive()
+    {
+
+        $tasks = Task::onlyTrashed()->get();
+        return response()->json(['tasks' => $tasks]);
+    }
+
+
 
     /**
      * Show the form for creating a new resource.
@@ -72,6 +90,7 @@ class TaskController extends Controller
             'status' => $request->status,
             'image' => $imagePath,
             'sub_tasks' => json_decode($request->sub_tasks, true),
+            'user_id' => Auth::id(),
         ]);
 
         return response()->json($task, 201);
@@ -133,5 +152,20 @@ class TaskController extends Controller
     {
         $task->delete();
         return response()->json(['message' => 'Task moved to trash']);
+    }
+    public function permanentDestroy($id)
+    {
+        try {
+            $task = Task::withTrashed()->find($id);
+
+            if ($task) {
+                $task->forceDelete();
+                return response()->json(['message' => 'Task permanently deleted']);
+            } else {
+                return response()->json(['message' => 'Task not found'], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error occurred while deleting task'], 500);
+        }
     }
 }
